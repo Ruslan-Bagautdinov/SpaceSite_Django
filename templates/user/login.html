@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %} Login page {% endblock %}
+{% block head %} {{ block.super }} {% endblock %}
+
+{% block page_content %}
+    
+    <form action="/login" method="post">
+                {% csrf_token %}
+                <fieldset>
+                   <legend>Login Form</legend>
+                    <label for="username" class="form-label">Username:</label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="username"
+                        name="username"
+                        required
+                    /><br />
+                    <label for="password" class="form-label">Password:</label>
+                    <input
+                        type="password"
+                        class="form-control"
+                        id="password"
+                        name="password"
+                        required
+                    /><br />
+                    <input type="submit" class="btn btn-success" value="OK" />
+                </fieldset>
+            </form>
+
+{% endblock %}
+
+{% block scripts %} {{ block.super }} {% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %} Home page {% endblock %}
+{% block head %} {{ block.super }} {% endblock %}
+
+{% block unsplash_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="image-container">
+                <img src="{{ unsplash_photo }}" class="img-fluid" alt="Cosmos Image">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer_content %}
+    Photo by <a href="https://unsplash.com/"
+                style="text-decoration: None; color: #ffffff">Unsplash</a>
+{% endblock %}
+
+{% block scripts %} {{ block.super }} {% endblock %}

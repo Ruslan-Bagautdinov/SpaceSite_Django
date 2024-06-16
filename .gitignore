@@ -1,0 +1,7 @@
+.venv/
+.idea/
+.git/
+.stuff/
+**/__pycache__/
+photo/*
+.env
