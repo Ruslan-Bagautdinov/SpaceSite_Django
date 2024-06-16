@@ -46,4 +46,3 @@ def load_unsplash_photo(query: str = "cosmos") -> str | None:
         image_url = None
 
     return image_url
-
