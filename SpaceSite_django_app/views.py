@@ -1,10 +1,11 @@
 
-
-
+import base64
+import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.conf import settings
 
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
@@ -184,10 +185,25 @@ class ProfileView(View):
         top_message = request.session.get('top_message')
         if top_message:
             del request.session['top_message']
+
+        # Handle user photo
+        user_photo_base64 = None
+        if profile.user_photo:
+            photo_path = profile.user_photo.path
+            if os.path.exists(photo_path):
+                with open(photo_path, "rb") as photo_file:
+                    user_photo_base64 = base64.b64encode(photo_file.read()).decode('utf-8')
+
+        if not user_photo_base64:
+            default_avatar_path = os.path.join(settings.STATIC_ROOT, 'img', 'default_avatar.jpg')
+            with open(default_avatar_path, "rb") as default_photo_file:
+                user_photo_base64 = base64.b64encode(default_photo_file.read()).decode('utf-8')
+
         context = {
             'profile': profile,
             'form': form,
-            'top_message': top_message
+            'top_message': top_message,
+            'user_photo_base64': user_photo_base64
         }
         return render(request, self.template_name, context)
 
@@ -204,7 +220,6 @@ class ProfileView(View):
                             message_text=f"{request.user.username}, Your profile has been updated!")
             return redirect('profile', user_id=user_id)
         return render(request, self.template_name, {'form': form})
-
 
 @method_decorator(login_required, name='dispatch')
 class ProfileUpdateView(View):
