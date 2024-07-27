@@ -3,7 +3,7 @@
 {% block head %} {{ block.super }} {% endblock %}
 
 {% block page_content %}
-  <form action="/register" method="post">
+  <form method="post" action="{% url 'register' %}">
     {% csrf_token %}
     <fieldset>
         <legend>Registration Form</legend>

@@ -1,14 +1,25 @@
+
+
 from django.urls import path
-from django.contrib.auth.views import LoginView
 from . import views
-from .views import RootView
 
 urlpatterns = [
-    path('', RootView.as_view(), name='root'),
-    path('login/', LoginView.as_view(template_name='user/login.html'), name='login'),
-    path('register/', views.register, name='register'),
-
+    path('', views.RootView.as_view(), name='root'),
+    path('login/', views.LoginView.as_view(), name='login'),
+    path('logout/', views.LogoutView.as_view(), name='logout'),
+    path('register/', views.RegisterView.as_view(), name='register'),
+    path('profile/<int:user_id>/', views.ProfileView.as_view(), name='profile'),
+    path('profile/<int:user_id>/update/', views.ProfileUpdateView.as_view(), name='profile_update'),
+    path('profile/<int:user_id>/delete/', views.DeleteProfileView.as_view(), name='delete_profile'),
     path('api/token/', views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', views.MyTokenRefreshView.as_view(), name='token_refresh'),
-
 ]
+
+
+
+
+
+
+
+
+

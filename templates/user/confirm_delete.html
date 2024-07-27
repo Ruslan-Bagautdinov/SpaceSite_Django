@@ -5,7 +5,7 @@
 {% block page_content %}
     <div class="container-fluid" style="margin: 5px">
      
-        <form id="delete-form" action="/protected/profile/{{ user_id }}/delete" method="post">
+        <form id="delete-form" action="{% url 'delete_profile' user_id %}" method="post">
             {% csrf_token %}
             <div class="container d-flex align-items-center justify-content-center" style="margin: 5px">
                 <label for="password">{{ user.username }}, enter your password to delete your account</label>
@@ -22,7 +22,7 @@
                         <div class="row">
                           <div class="col text-center">
                             <button type="submit" class="btn btn-danger btn-sm" id="delete-button">Delete Account</button>
-                            <a href="/protected/me" class="btn btn-secondary btn-sm" role="button">Cancel</a>
+                            <a href="{% url 'profile' user_id %}" class="btn btn-secondary btn-sm" role="button">Cancel</a>
                           </div>
                         </div>
                     </div>

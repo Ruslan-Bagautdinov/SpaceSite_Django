@@ -6,3 +6,4 @@ WARNING_ICON = '<i class="bi bi-exclamation-square"></i>'
 
 WARNING_CLASS = "alert alert-danger rounded"
 OK_CLASS = "alert alert-success rounded"
+INFO_CLASS = "alert alert-info rounded"

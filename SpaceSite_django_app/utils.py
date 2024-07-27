@@ -3,9 +3,29 @@ import requests
 import random
 from django.conf import settings
 from django.shortcuts import redirect
+from rest_framework import status
 
 
-def redirect_with_message(request, message_class, message_icon, message_text, endpoint=None, logout=False):
+def set_top_message(request,
+                    message_class,
+                    message_icon,
+                    message_text):
+
+    request.session.pop('top_message', None)
+    top_message = {
+        "class": message_class,
+        "icon": message_icon,
+        "text": message_text
+    }
+    request.session['top_message'] = top_message
+
+
+def redirect_with_message(request,
+                          message_class,
+                          message_icon,
+                          message_text,
+                          status=status.HTTP_302_FOUND,
+                          endpoint=None, logout=False):
     top_message = {
         "class": message_class,
         "icon": message_icon,
@@ -14,7 +34,7 @@ def redirect_with_message(request, message_class, message_icon, message_text, en
     request.session['top_message'] = top_message
     if logout:
         endpoint = "/logout/?login=True"
-    return redirect(endpoint)
+    return redirect(endpoint, status=status)
 
 
 def load_unsplash_photo(query: str = "cosmos") -> str | None:
