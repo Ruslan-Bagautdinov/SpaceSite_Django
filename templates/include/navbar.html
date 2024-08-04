@@ -1,81 +1,86 @@
 <nav class="navbar sticky-top navbar-expand-lg navbar-light bg-light custom-navbar" id="my_navbar" data-bs-theme="dark">
-  <div class="container-fluid mx-3 g-0">
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#navbarToggler"
-      aria-controls="navbarToggler"
-      aria-expanded="false"
-      aria-label="Toggle navigation"
-    >
-      <span class="navbar-toggler-icon"></span>
-    </button>
+    <div class="container-fluid mx-3 g-0">
+        <button
+                class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarToggler"
+                aria-controls="navbarToggler"
+                aria-expanded="false"
+                aria-label="Toggle navigation"
+        >
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-    <a class="navbar-brand" href="{% url 'root' %}">
-      <img src="/static/img/navbar_logo.png" alt="Space Site!" height="70">
-    </a>
+        <a class="navbar-brand" href="{% url 'root' %}">
+            <img src="/static/img/navbar_logo.png" alt="Space Site!" height="70">
+        </a>
 
-    <div class="collapse navbar-collapse" id="navbarToggler">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link theme-toggle" data-theme="light" href="#">
-            <i class="bi bi-sun"></i>
-            Light theme
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link theme-toggle" data-theme="dark" href="#">
-            <i class="bi bi-moon-stars"></i>
-            Dark theme
-          </a>
-        </li>
-      </ul>
+        <div class="collapse navbar-collapse" id="navbarToggler">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link theme-toggle" data-theme="light" href="#">
+                        <i class="bi bi-sun"></i>
+                        Light theme
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link theme-toggle" data-theme="dark" href="#">
+                        <i class="bi bi-moon-stars"></i>
+                        Dark theme
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="dropdown">
+            <button
+                    class="btn btn-secondary btn-sm dropdown-toggle"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+            >
+                {% if user.is_authenticated %}
+                    <i class="bi bi-person-circle"></i>
+                    Welcome, {{ user.username }}
+                {% else %}
+                    <i class="bi bi-unlock-fill"></i>
+                    Login or register
+                {% endif %}
+            </button>
+
+            <ul class="dropdown-menu dropdown-menu-end">
+                {% if user.is_authenticated %}
+                    <li><a class="dropdown-item" href="{% url 'create_post' %}">
+                        <i class="bi bi-pencil-square"></i>
+                        Create Post
+                    </a>
+                    </li>
+                    <li><a class="dropdown-item" href="{% url 'profile' user.id %}">
+                        <i class="bi bi-person-square"></i>
+                        Profile
+                    </a>
+                    </li>
+                    <li><a class="dropdown-item" href="{% url 'logout' %}">
+                        <i class="bi bi-box-arrow-right"></i>
+                        Logout
+                    </a>
+                    </li>
+                {% else %}
+                    <li><a class="dropdown-item" href="{% url 'login' %}">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        Login
+                    </a>
+                    </li>
+                    <li><a class="dropdown-item" href="{% url 'register' %}">
+                        <i class="bi bi-person-plus"></i>
+                        Register
+                    </a>
+                    </li>
+                {% endif %}
+
+            </ul>
+        </div>
+
     </div>
-
-    <div class="dropdown">
-      <button
-        class="btn btn-secondary btn-sm dropdown-toggle"
-        type="button"
-        data-bs-toggle="dropdown"
-        aria-expanded="false"
-      >
-        {% if user.is_authenticated %}
-          <i class="bi bi-person-circle"></i>
-          Welcome, {{ user.username }}
-        {% else %}
-          <i class="bi bi-unlock-fill"></i>
-          Login or register
-        {% endif %}
-      </button>
-
-      <ul class="dropdown-menu dropdown-menu-end">
-        {% if user.is_authenticated %}
-          <li><a class="dropdown-item" href="{% url 'profile' user.id %}">
-            <i class="bi bi-person-square"></i>
-            Profile
-            </a>
-          </li>
-          <li><a class="dropdown-item" href="{% url 'logout' %}">
-            <i class="bi bi-box-arrow-right"></i>
-            Logout
-            </a>
-          </li>
-        {% else %}
-          <li><a class="dropdown-item" href="{% url 'login' %}">
-              <i class="bi bi-box-arrow-in-right"></i>
-              Login
-            </a>
-          </li>
-          <li><a class="dropdown-item" href="{% url 'register' %}">
-            <i class="bi bi-person-plus"></i>
-            Register
-            </a>
-          </li>
-        {% endif %}
-
-      </ul>
-    </div>
-
-  </div>
 </nav>

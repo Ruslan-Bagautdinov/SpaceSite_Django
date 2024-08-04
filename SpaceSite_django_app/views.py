@@ -4,6 +4,7 @@ import os
 from django.conf import settings
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -16,7 +17,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from templates import icons
 from .forms import UserRegistrationForm, UserProfileForm
-from .models import UserProfile
+from .models import UserProfile, Post, PostForm
 from .utils import load_unsplash_photo, set_top_message
 
 
@@ -47,10 +48,24 @@ class RootView(View):
         unsplash_photo = load_unsplash_photo('universe galaxy cosmos')
         if unsplash_photo is None:
             unsplash_photo = '/static/img/default_unsplash.jpg'
+        posts = Post.objects.all().order_by('-created_at')
+
+        # Pagination
+        page = request.GET.get('page', 1)
+        paginator = Paginator(posts, 21)  # Show 21 posts per page
+
+        try:
+            posts = paginator.page(page)
+        except PageNotAnInteger:
+            posts = paginator.page(1)
+        except EmptyPage:
+            posts = paginator.page(paginator.num_pages)
+
         context = {
             "user": request.user if request.user.is_authenticated else None,
             "top_message": top_message,
-            "unsplash_photo": unsplash_photo
+            "unsplash_photo": unsplash_photo,
+            "posts": posts
         }
         return render(request, template_name, context)
 
@@ -227,3 +242,25 @@ class DeleteProfileView(View):
         response = redirect('login')
         response.delete_cookie('access_token')
         return response
+
+
+@method_decorator(login_required, name='dispatch')
+class CreatePostView(View):
+    template_name = 'user/create_post.html'
+
+    def get(self, request):
+        form = PostForm()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        form = PostForm(request.POST)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.user = request.user
+            post.save()
+            set_top_message(request,
+                            message_class=icons.OK_CLASS,
+                            message_icon=icons.OK_ICON,
+                            message_text="Post created successfully!")
+            return redirect('root')
+        return render(request, self.template_name, {'form': form})

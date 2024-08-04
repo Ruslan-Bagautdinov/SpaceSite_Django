@@ -1,9 +1,8 @@
-
-
 # Create your models here.
 
-from django.db import models
+from django import forms
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 
 
 class User(AbstractUser):
@@ -24,3 +23,21 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+
+
+class Post(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.content[:50]  # Return the first 50 characters of the post content
+
+    def truncated_content(self):
+        return self.content[:100] + '...' if len(self.content) > 100 else self.content
+
+
+class PostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ['content']
