@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %} Home page {% endblock %}
-{% block head %} {{ block.super }} {% endblock %}
+{% block head %}
+    {{ block.super }}
+{% endblock %}
 
 {% block unsplash_content %}
     <div class="container-fluid">
@@ -8,12 +10,14 @@
             <div class="col-12">
                 <div class="image-container"
                      style="background-image: url('{{ unsplash_photo }}'); background-size: cover; background-position: center; height: 100vh; display: flex; flex-direction: column;">
-                    <div class="posts-container">
+                    <div id="posts_container"
+                         style="display: flex; flex-wrap: wrap; padding: 20px; justify-content: space-around; flex-grow: 1;">
                         {% for post in posts %}
-                            <div class="post">
-                                <p>{{ post.truncated_content }}</p>
-                                <p><small>By {{ post.user.username }} on {{ post.created_at|date:"F d, Y H:i" }}</small>
-                                </p>
+                            <div id="single_post"
+                                 style="flex: 1 1 calc(33.33% - 20px); margin: 10px; padding: 20px; background: rgba(0, 0, 0, 0.5); border-radius: 10px; border: 1px solid #ccc; color: #fff; box-sizing: border-box;">
+                                <p style="margin-bottom: 0.25rem;">{{ post.truncated_content }}</p>
+                                <p style="margin-bottom: 0.25rem;"><small style="color: #ddd;">By {{ post.user.username }}
+                                    on {{ post.created_at|date:"F d, Y H:i" }}</small></p>
                             </div>
                             {% if forloop.counter|divisibleby:3 %}
                                 <div class="w-100"></div>
@@ -32,14 +36,16 @@
                                     </li>
                                 {% endif %}
                                 <li class="page-item disabled">
-                                    <a class="page-link" href="#">Page {{ posts.number }} of {{ posts.paginator.num_pages }}</a>
+                                    <a class="page-link" href="#">Page {{ posts.number }}
+                                        of {{ posts.paginator.num_pages }}</a>
                                 </li>
                                 {% if posts.has_next %}
                                     <li class="page-item">
                                         <a class="page-link" href="?page={{ posts.next_page_number }}">next</a>
                                     </li>
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ posts.paginator.num_pages }}">last &raquo;</a>
+                                        <a class="page-link" href="?page={{ posts.paginator.num_pages }}">last
+                                            &raquo;</a>
                                     </li>
                                 {% endif %}
                             </ul>
@@ -56,4 +62,6 @@
                 style="text-decoration: None; color: #ffffff">Unsplash</a>
 {% endblock %}
 
-{% block scripts %} {{ block.super }} {% endblock %}
+{% block scripts %}
+    {{ block.super }}
+{% endblock %}

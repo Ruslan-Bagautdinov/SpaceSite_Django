@@ -51,14 +51,19 @@
 
             <ul class="dropdown-menu dropdown-menu-end">
                 {% if user.is_authenticated %}
+                    <li><a class="dropdown-item" href="{% url 'profile' user.id %}">
+                        <i class="bi bi-person-square"></i>
+                        Profile
+                    </a>
+                    </li>
                     <li><a class="dropdown-item" href="{% url 'create_post' %}">
                         <i class="bi bi-pencil-square"></i>
                         Create Post
                     </a>
                     </li>
-                    <li><a class="dropdown-item" href="{% url 'profile' user.id %}">
-                        <i class="bi bi-person-square"></i>
-                        Profile
+                    <li><a class="dropdown-item" href="{% url 'my_posts' %}">
+                        <i class="bi bi-list"></i>
+                        My Posts
                     </a>
                     </li>
                     <li><a class="dropdown-item" href="{% url 'logout' %}">

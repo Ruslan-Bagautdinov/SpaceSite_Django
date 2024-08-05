@@ -33,6 +33,8 @@ class RootView(View):
     def get(self, request):
         template_name = 'root.html'
         top_message = request.session.get('top_message')
+
+
         if top_message is None:
             if request.user.is_authenticated:
                 text = f"Hello, {request.user.username}!"
@@ -52,7 +54,7 @@ class RootView(View):
 
         # Pagination
         page = request.GET.get('page', 1)
-        paginator = Paginator(posts, 21)  # Show 21 posts per page
+        paginator = Paginator(posts, 12)  # Show 12 posts per page
 
         try:
             posts = paginator.page(page)
@@ -264,3 +266,47 @@ class CreatePostView(View):
                             message_text="Post created successfully!")
             return redirect('root')
         return render(request, self.template_name, {'form': form})
+
+
+class PostListView(View):
+    template_name = 'user/my_posts.html'
+
+    @method_decorator(login_required)
+    def get(self, request):
+        posts = Post.objects.filter(user=request.user).order_by('-created_at')
+        return render(request, self.template_name, {'posts': posts})
+
+
+class PostEditView(View):
+    template_name = 'user/edit_post.html'
+
+    @method_decorator(login_required)
+    def get(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id, user=request.user)
+        form = PostForm(instance=post)
+        return render(request, self.template_name, {'form': form, 'post': post})
+
+    @method_decorator(login_required)
+    def post(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id, user=request.user)
+        form = PostForm(request.POST, instance=post)
+        if form.is_valid():
+            form.save()
+            set_top_message(request,
+                            message_class=icons.OK_CLASS,
+                            message_icon=icons.OK_ICON,
+                            message_text="Post updated successfully!")
+            return redirect('my_posts')
+        return render(request, self.template_name, {'form': form, 'post': post})
+
+
+class PostDeleteView(View):
+    @method_decorator(login_required)
+    def post(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id, user=request.user)
+        post.delete()
+        set_top_message(request,
+                        message_class=icons.WARNING_CLASS,
+                        message_icon=icons.WARNING_ICON,
+                        message_text="Post deleted successfully!")
+        return redirect('my_posts')

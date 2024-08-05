@@ -11,5 +11,8 @@ urlpatterns = [
     path('profile/<int:user_id>/delete/', views.DeleteProfileView.as_view(), name='delete_profile'),
     path('api/token/', views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', views.MyTokenRefreshView.as_view(), name='token_refresh'),
-    path('create-post/', views.CreatePostView.as_view(), name='create_post'),  # Add this line
+    path('create-post/', views.CreatePostView.as_view(), name='create_post'),
+    path('my-posts/', views.PostListView.as_view(), name='my_posts'),
+    path('edit-post/<int:post_id>/', views.PostEditView.as_view(), name='edit_post'),
+    path('delete-post/<int:post_id>/', views.PostDeleteView.as_view(), name='delete_post'),
 ]

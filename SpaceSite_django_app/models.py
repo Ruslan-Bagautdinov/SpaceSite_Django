@@ -34,7 +34,7 @@ class Post(models.Model):
         return self.content[:50]  # Return the first 50 characters of the post content
 
     def truncated_content(self):
-        return self.content[:100] + '...' if len(self.content) > 100 else self.content
+        return self.content[:300] + '...' if len(self.content) > 500 else self.content
 
 
 class PostForm(forms.ModelForm):

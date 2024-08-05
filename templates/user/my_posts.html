@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %} My Posts {% endblock %}
+{% block head %} {{ block.super }} {% endblock %}
+
+{% block page_content %}
+    <div class="container">
+        <h2>My Posts</h2>
+        <ul style="list-style-type: none; padding: 0;">
+            {% for post in posts %}
+                <li style="margin-bottom: 10px;">
+                    <div style="border: 1px solid #ccc; border-radius: 10px; padding: 10px; background-color: #fff;">
+                        <a href="{% url 'edit_post' post.id %}" style="text-decoration: none; color: #333;">
+                            {{ post.truncated_content }}
+                        </a>
+                    </div>
+                </li>
+            {% empty %}
+                <li>No posts yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}
