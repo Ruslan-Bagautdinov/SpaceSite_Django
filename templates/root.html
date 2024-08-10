@@ -2,6 +2,12 @@
 {% block title %} Home page {% endblock %}
 {% block head %}
     {{ block.super }}
+    <style>
+        .modal-content {
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+        }
+    </style>
 {% endblock %}
 
 {% block unsplash_content %}
@@ -14,7 +20,8 @@
                          style="display: flex; flex-wrap: wrap; padding: 20px; justify-content: space-around; flex-grow: 1;">
                         {% for post in posts %}
                             <div id="single_post"
-                                 style="flex: 1 1 calc(33.33% - 20px); margin: 10px; padding: 20px; background: rgba(0, 0, 0, 0.5); border-radius: 10px; border: 1px solid #ccc; color: #fff; box-sizing: border-box;">
+                                 style="flex: 1 1 calc(33.33% - 20px); margin: 10px; padding: 20px; background: rgba(0, 0, 0, 0.5); border-radius: 10px; border: 1px solid #ccc; color: #fff; box-sizing: border-box; cursor: pointer;"
+                                 data-bs-toggle="modal" data-bs-target="#postModal{{ post.id }}">
                                 <p style="margin-bottom: 0.25rem;">{{ post.truncated_content }}</p>
                                 <p style="margin-bottom: 0.25rem;"><small style="color: #ddd;">By {{ post.user.username }}
                                     on {{ post.created_at|date:"F d, Y H:i" }}</small></p>
@@ -55,6 +62,26 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal -->
+    {% for post in posts %}
+        <div class="modal fade" id="postModal{{ post.id }}" tabindex="-1" aria-labelledby="postModalLabel{{ post.id }}" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="postModalLabel{{ post.id }}">Post by {{ post.user.username }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>{{ post.content }}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
 {% endblock %}
 
 {% block footer_content %}
@@ -64,4 +91,30 @@
 
 {% block scripts %}
     {{ block.super }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var postElements = document.querySelectorAll('#single_post');
+            postElements.forEach(function(postElement) {
+                postElement.addEventListener('click', function() {
+                    var postId = this.getAttribute('data-bs-target').replace('#postModal', '');
+                    var modal = new bootstrap.Modal(document.getElementById('postModal' + postId));
+                    modal.show();
+                });
+            });
+            
+            var modalBackdrop = document.querySelector('.modal-backdrop');
+            if (modalBackdrop) {
+                modalBackdrop.remove();
+            }
+            
+            document.querySelectorAll('.modal').forEach(function(modal) {
+                modal.addEventListener('hidden.bs.modal', function() {
+                    var backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.remove();
+                    }
+                });
+            });
+        });
+    </script>
 {% endblock %}
