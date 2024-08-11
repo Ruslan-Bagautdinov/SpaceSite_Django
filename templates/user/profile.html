@@ -15,7 +15,7 @@
 
                     <div class="col-4 col-sm-3">
                         <label for="user_photo">
-                            <img id="avatar" src="data:image/png;base64,{{ user_photo_base64 }}" class="img-fluid"
+                            <img id="avatar" src="{{ user_photo_url }}" class="img-fluid"
                                  alt="User Photo" style="cursor: pointer; border-radius: 5px 0 5px 0;">
                         </label>
                     </div>
@@ -23,12 +23,12 @@
                     <div class="col-8 col-sm-9">
                         <div class="row mt-5">
                             <div class="col">
-                                <h3>Username: {{ profile.username }}</h3>
+                                <h3>Username: {{ profile.user.username }}</h3>
                             </div>
                         </div>
                         <div class="row mt-5">
                             <div class="col">
-                                <h3>Email: {{ profile.email }}</h3>
+                                <h3>Email: {{ profile.user.email }}</h3>
                             </div>
                         </div>
                     </div>
@@ -93,6 +93,12 @@
                 <div class="mb-3  mx-3 text-center">
                     <input type="submit" class="btn btn-success" value="Save changes"/>
                     <a href="/" class="btn btn-secondary" role="button">Cancel</a>
+                    {% if request.user.role == 'admin' and request.user.id != profile.user_id %}
+                        <a href="{% url 'admin_user_posts' profile.user_id %}" class="btn btn-info" role="button">
+                            <i class="bi bi-eye"></i>
+                            View Posts
+                        </a>
+                    {% endif %}
                 </div>
 
                 <div class="border border-danger rounded">

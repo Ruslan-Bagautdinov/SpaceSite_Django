@@ -1,0 +1,21 @@
+{# admin/user_list.html #}
+{% extends "base.html" %}
+{% block title %} All Users {% endblock %}
+{% block head %} {{ block.super }} {% endblock %}
+
+{% block page_content %}
+    <div class="container">
+        <h1 class="text-center">All Users</h1>
+        <div class="list-group">
+            {% for user in users %}
+                <a href="{% url 'admin_user_profile' user.id %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{ user.username }}</h5>
+                        <small>{{ user.role }}</small>
+                    </div>
+                    <p class="mb-1">{{ user.email }}</p>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

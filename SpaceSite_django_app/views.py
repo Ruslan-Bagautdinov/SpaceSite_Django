@@ -1,3 +1,6 @@
+import os
+
+from django.conf import settings
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
@@ -171,10 +174,22 @@ class ProfileView(View):
         if top_message:
             del request.session['top_message']
 
+        # Check if the user has an avatar image, otherwise use the default avatar
+        user_photo_path = profile.user_photo
+        if user_photo_path:
+            user_photo_full_path = os.path.join(settings.BASE_DIR, 'static', 'img', user_photo_path)
+            if os.path.exists(user_photo_full_path):
+                user_photo_url = os.path.join(settings.STATIC_URL, 'img', user_photo_path)
+            else:
+                user_photo_url = os.path.join(settings.STATIC_URL, 'img', 'default_avatar.jpg')
+        else:
+            user_photo_url = os.path.join(settings.STATIC_URL, 'img', 'default_avatar.jpg')
+
         context = {
             'profile': profile,
             'form': form,
             'top_message': top_message,
+            'user_photo_url': user_photo_url,
         }
         return render(request, self.template_name, context)
 
@@ -184,7 +199,15 @@ class ProfileView(View):
             return redirect('profile', user_id=request.user.id)
         form = UserProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
         if form.is_valid():
-            form.save()
+            profile = form.save(commit=False)
+            if 'user_photo' in request.FILES:
+                user_photo = request.FILES['user_photo']
+                photo_path = os.path.join(settings.BASE_DIR, 'static', 'img', user_photo.name)
+                with open(photo_path, 'wb+') as destination:
+                    for chunk in user_photo.chunks():
+                        destination.write(chunk)
+                profile.user_photo = user_photo.name
+            profile.save()
             if 'role' in form.cleaned_data:
                 profile.user.role = form.cleaned_data['role']
                 profile.user.save()
@@ -202,7 +225,15 @@ class ProfileUpdateView(View):
             return redirect('profile', user_id=request.user.id)
         form = UserProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
-            form.save()
+            profile = form.save(commit=False)
+            if 'user_photo' in request.FILES:
+                user_photo = request.FILES['user_photo']
+                photo_path = os.path.join(settings.BASE_DIR, 'static', 'img', user_photo.name)
+                with open(photo_path, 'wb+') as destination:
+                    for chunk in user_photo.chunks():
+                        destination.write(chunk)
+                profile.user_photo = user_photo.name
+            profile.save()
             set_top_message(request,
                             message_class=icons.OK_CLASS,
                             message_icon=icons.OK_ICON,
@@ -226,6 +257,9 @@ class DeleteProfileView(View):
         if profile.user != request.user:
             return redirect('profile', user_id=request.user.id)
         user = profile.user
+        user_photo_path = profile.user_photo
+        if user_photo_path and os.path.exists(os.path.join(settings.BASE_DIR, 'static', 'img', user_photo_path)):
+            os.remove(os.path.join(settings.BASE_DIR, 'static', 'img', user_photo_path))
         user.delete()
         logout(request)
         set_top_message(request,

@@ -2,11 +2,9 @@
 
 from django import forms
 from django.contrib.auth.models import AbstractUser
-from django.db import models
-
-
-from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db import models
+
 
 class User(AbstractUser):
     ROLE_CHOICES = (
@@ -26,7 +24,7 @@ class UserProfile(models.Model):
     first_name = models.CharField(max_length=30, blank=True, null=True)
     last_name = models.CharField(max_length=30, blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
-    user_photo = models.ImageField(upload_to='user_photos/', blank=True, null=True)
+    user_photo = models.CharField(max_length=255, blank=True, null=True)  # Store only the filename
     user_age = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
