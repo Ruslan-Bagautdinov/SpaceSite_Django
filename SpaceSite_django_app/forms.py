@@ -13,6 +13,16 @@ class UserRegistrationForm(forms.ModelForm):
 
 
 class UserProfileForm(forms.ModelForm):
+    role = forms.ChoiceField(choices=User.ROLE_CHOICES, required=False)
+
     class Meta:
         model = UserProfile
         fields = ['first_name', 'last_name', 'phone_number', 'user_photo', 'user_age']
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super(UserProfileForm, self).__init__(*args, **kwargs)
+        if user and user.role != 'admin':
+            del self.fields['role']
+        elif user is None:
+            del self.fields['role']

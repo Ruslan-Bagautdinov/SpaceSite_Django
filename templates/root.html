@@ -101,18 +101,14 @@
                     modal.show();
                 });
             });
-            
-            var modalBackdrop = document.querySelector('.modal-backdrop');
-            if (modalBackdrop) {
-                modalBackdrop.remove();
-            }
-            
+
             document.querySelectorAll('.modal').forEach(function(modal) {
                 modal.addEventListener('hidden.bs.modal', function() {
                     var backdrop = document.querySelector('.modal-backdrop');
                     if (backdrop) {
                         backdrop.remove();
                     }
+                    document.body.style.overflow = '';
                 });
             });
         });

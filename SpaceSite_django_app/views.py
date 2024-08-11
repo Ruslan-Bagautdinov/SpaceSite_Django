@@ -1,23 +1,19 @@
-import base64
-import os
-
-from django.conf import settings
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
-from loguru import logger
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from templates import icons
 from .forms import UserRegistrationForm, UserProfileForm
-from .models import UserProfile, Post, PostForm
+from .models import User, UserProfile, Post, PostForm
 from .utils import load_unsplash_photo, set_top_message
 
 
@@ -29,11 +25,14 @@ class MyTokenRefreshView(TokenRefreshView):
     pass
 
 
+def is_admin(user):
+    return user.role == 'admin'
+
+
 class RootView(View):
     def get(self, request):
         template_name = 'root.html'
         top_message = request.session.get('top_message')
-
 
         if top_message is None:
             if request.user.is_authenticated:
@@ -141,6 +140,7 @@ class RegisterView(View):
         if user_form.is_valid() and profile_form.is_valid():
             user = user_form.save(commit=False)
             user.set_password(user.password)  # Hash the password
+            user.role = 'user'  # Assign the 'user' role
             user.save()
             profile = profile_form.save(commit=False)
             profile.user = user
@@ -164,41 +164,32 @@ class ProfileView(View):
 
     def get(self, request, user_id):
         profile = get_object_or_404(UserProfile, user_id=user_id)
-        if profile.user != request.user:
+        if profile.user != request.user and request.user.role != 'admin':
             return redirect('profile', user_id=request.user.id)
-        form = UserProfileForm(instance=profile)
+        form = UserProfileForm(instance=profile, user=request.user)
         top_message = request.session.get('top_message')
-        logger.info(f'top_message at ProfileView get: {top_message}')
         if top_message:
-            request.session.pop('top_message', None)
+            del request.session['top_message']
 
-        user_photo_base64 = None
-        if profile.user_photo:
-            logger.info(f'User photo path: {profile.user_photo.path}')
-            photo_path = profile.user_photo.path
-            if os.path.exists(photo_path):
-                with open(photo_path, "rb") as photo_file:
-                    user_photo_base64 = base64.b64encode(photo_file.read()).decode('utf-8')
-            else:
-                logger.info(f'Photo path does not exist: {photo_path}')
-        else:
-            logger.info('User photo is None')
-
-        if not user_photo_base64:
-            default_avatar_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'default_avatar.jpg')
-            logger.info(f'Using default avatar path: {default_avatar_path}')
-            with open(default_avatar_path, "rb") as default_photo_file:
-                user_photo_base64 = base64.b64encode(default_photo_file.read()).decode('utf-8')
-
-        logger.info(f'top_message before Profile render: {top_message}')
         context = {
             'profile': profile,
             'form': form,
             'top_message': top_message,
-            'user_photo_base64': user_photo_base64
         }
-        logger.info(f'context before Profile render: {context.get("top_message")}')
         return render(request, self.template_name, context)
+
+    def post(self, request, user_id):
+        profile = get_object_or_404(UserProfile, user_id=user_id)
+        if profile.user != request.user and request.user.role != 'admin':
+            return redirect('profile', user_id=request.user.id)
+        form = UserProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
+        if form.is_valid():
+            form.save()
+            if 'role' in form.cleaned_data:
+                profile.user.role = form.cleaned_data['role']
+                profile.user.save()
+            return redirect('profile', user_id=user_id)
+        return render(request, self.template_name, {'form': form, 'profile': profile})
 
 
 @method_decorator(login_required, name='dispatch')
@@ -310,3 +301,60 @@ class PostDeleteView(View):
                         message_icon=icons.WARNING_ICON,
                         message_text="Post deleted successfully!")
         return redirect('my_posts')
+
+
+@method_decorator(user_passes_test(is_admin), name='dispatch')
+class AdminUserListView(View):
+    template_name = 'admin/user_list.html'
+
+    def get(self, request):
+        users = User.objects.all()
+        return render(request, self.template_name, {'users': users})
+
+
+@method_decorator(user_passes_test(is_admin), name='dispatch')
+class AdminUserProfileView(View):
+    template_name = 'admin/user_profile.html'
+
+    def get(self, request, user_id):
+        profile = get_object_or_404(UserProfile, user_id=user_id)
+        form = UserProfileForm(instance=profile, user=request.user)
+        return render(request, self.template_name, {'form': form, 'profile': profile})
+
+    def post(self, request, user_id):
+        profile = get_object_or_404(UserProfile, user_id=user_id)
+        form = UserProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
+        if form.is_valid():
+            form.save()
+            if 'role' in form.cleaned_data:
+                profile.user.role = form.cleaned_data['role']
+                profile.user.save()
+            return redirect('admin_user_list')
+        return render(request, self.template_name, {'form': form, 'profile': profile})
+
+
+@method_decorator(user_passes_test(is_admin), name='dispatch')
+class AdminUserPostsView(View):
+    template_name = 'admin/user_posts.html'
+
+    def get(self, request, user_id):
+        posts = Post.objects.filter(user_id=user_id).order_by('-created_at')
+        return render(request, self.template_name, {'posts': posts})
+
+
+@method_decorator(user_passes_test(is_admin), name='dispatch')
+class AdminPostEditView(View):
+    template_name = 'admin/edit_post.html'
+
+    def get(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        form = PostForm(instance=post)
+        return render(request, self.template_name, {'form': form, 'post': post})
+
+    def post(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        form = PostForm(request.POST, instance=post)
+        if form.is_valid():
+            form.save()
+            return redirect('admin_user_posts', user_id=post.user.id)
+        return render(request, self.template_name, {'form': form, 'post': post})
