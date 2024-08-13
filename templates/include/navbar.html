@@ -31,14 +31,6 @@
                         Dark theme
                     </a>
                 </li>
-                {% if user.is_authenticated and user.role == 'admin' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'admin_user_list' %}">
-                            <i class="bi bi-people"></i>
-                            All Users
-                        </a>
-                    </li>
-                {% endif %}
             </ul>
         </div>
 
@@ -60,6 +52,13 @@
 
             <ul class="dropdown-menu dropdown-menu-end">
                 {% if user.is_authenticated %}
+                    {% if user.role == 'admin' %}
+                    <li><a class="dropdown-item" href="{% url 'admin_user_list' %}">
+                        <i class="bi bi-people"></i>
+                        All Users
+                    </a>
+                    </li>
+                    {% endif %}
                     <li><a class="dropdown-item" href="{% url 'profile' user.id %}">
                         <i class="bi bi-person-square"></i>
                         Profile

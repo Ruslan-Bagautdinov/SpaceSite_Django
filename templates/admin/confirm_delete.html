@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %} Account delete confirmation {% endblock %}
+{% block head %} {{ block.super }} {% endblock %}
+
+{% block page_content %}
+    <div class="container-fluid" style="margin: 5px">
+        <form id="delete-form" action="{% url 'admin_delete_profile' profile.user_id %}" method="post">
+            {% csrf_token %}
+            <div class="container d-flex align-items-center justify-content-center" style="margin: 5px">
+                <div class="border border-danger rounded">
+                    <div class="container-fluid" style="margin: 5px">
+                        <div class="row">
+                            <div class="col text-center">
+                                <label for="delete-button" class="form-label">Warning: A deleted account cannot be
+                                    restored</label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col text-center">
+                                <button type="submit" class="btn btn-danger btn-sm" id="delete-button">Delete Account
+                                </button>
+                                <a href="{% url 'admin_user_list' %}" class="btn btn-secondary btn-sm" role="button">Cancel</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block scripts %} {{ block.super }} {% endblock %}

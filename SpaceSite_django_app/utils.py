@@ -1,6 +1,8 @@
 # myapp/utils.py
-import requests
+import os
 import random
+
+import requests
 from django.conf import settings
 from django.shortcuts import redirect
 from rest_framework import status
@@ -10,7 +12,6 @@ def set_top_message(request,
                     message_class,
                     message_icon,
                     message_text):
-
     request.session.pop('top_message', None)
     top_message = {
         "class": message_class,
@@ -66,3 +67,16 @@ def load_unsplash_photo(query: str = "cosmos") -> str | None:
         image_url = None
 
     return image_url
+
+
+def get_user_photo_url(profile):
+    user_photo_path = profile.user_photo
+    if user_photo_path:
+        user_photo_full_path = os.path.join(settings.BASE_DIR, 'static', 'img', user_photo_path)
+        if os.path.exists(user_photo_full_path):
+            user_photo_url = os.path.join(settings.STATIC_URL, 'img', user_photo_path)
+        else:
+            user_photo_url = os.path.join(settings.STATIC_URL, 'img', 'default_avatar.jpg')
+    else:
+        user_photo_url = os.path.join(settings.STATIC_URL, 'img', 'default_avatar.jpg')
+    return user_photo_url
