@@ -199,12 +199,18 @@ class ProfileView(View):
                         destination.write(chunk)
                 profile.user_photo = user_photo.name
             profile.save()
+
+            # Save the role change if the form contains a role field
             if 'role' in form.cleaned_data:
+                print(f"Role before change: {profile.user.role}")  # Debugging statement
                 profile.user.role = form.cleaned_data['role']
                 profile.user.save()
-            return redirect('profile', user_id=user_id)
-        return render(request, self.template_name, {'form': form, 'profile': profile})
+                print(f"Role after change: {profile.user.role}")  # Debugging statement
 
+            return redirect('profile', user_id=user_id)
+        else:
+            print(form.errors)  # Debugging statement to print form errors
+        return render(request, self.template_name, {'form': form, 'profile': profile})
 
 @method_decorator(login_required, name='dispatch')
 class ProfileUpdateView(View):
@@ -239,24 +245,26 @@ class DeleteProfileView(View):
 
     def get(self, request, user_id):
         profile = get_object_or_404(UserProfile, user_id=user_id)
-        if profile.user != request.user:
+        if profile.user != request.user and not request.user.role == 'admin':
             return redirect('profile', user_id=request.user.id)
         return render(request, self.template_name, {'profile': profile})
 
     def post(self, request, user_id):
         profile = get_object_or_404(UserProfile, user_id=user_id)
-        if profile.user != request.user:
+        if profile.user != request.user and not request.user.role == 'admin':
             return redirect('profile', user_id=request.user.id)
         user = profile.user
         user_photo_path = profile.user_photo
         if user_photo_path and os.path.exists(os.path.join(settings.BASE_DIR, 'static', 'img', user_photo_path)):
             os.remove(os.path.join(settings.BASE_DIR, 'static', 'img', user_photo_path))
         user.delete()
-        logout(request)
         set_top_message(request,
                         message_class=icons.WARNING_CLASS,
                         message_icon=icons.USER_DELETE_ICON,
                         message_text=f"{user.username} has been deleted!")
+        if request.user.role == 'admin':
+            return redirect('admin_user_list')
+        logout(request)
         response = redirect('login')
         response.delete_cookie('access_token')
         return response
@@ -290,7 +298,7 @@ class PostListView(View):
     @method_decorator(login_required)
     def get(self, request):
         posts = Post.objects.filter(user=request.user).order_by('-created_at')
-        return render(request, self.template_name, {'posts': posts})
+        return render(request, self.template_name, {'posts': posts, 'username': request.user.username})
 
 
 class PostEditView(View):
@@ -382,7 +390,8 @@ class AdminUserPostsView(View):
 
     def get(self, request, user_id):
         posts = Post.objects.filter(user_id=user_id).order_by('-created_at')
-        return render(request, self.template_name, {'posts': posts})
+        username = User.objects.get(id=user_id).username
+        return render(request, self.template_name, {'posts': posts, 'username': username})
 
 
 @method_decorator(user_passes_test(is_admin), name='dispatch')

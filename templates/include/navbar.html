@@ -43,7 +43,7 @@
             >
                 {% if user.is_authenticated %}
                     <i class="bi bi-person-circle"></i>
-                    Welcome, {{ user.username }}
+                    Welcome, {{ user.role }} {{ user.username }}
                 {% else %}
                     <i class="bi bi-unlock-fill"></i>
                     Login or register

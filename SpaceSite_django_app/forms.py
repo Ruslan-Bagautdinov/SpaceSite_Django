@@ -1,4 +1,3 @@
-
 from django import forms
 
 from .models import User, UserProfile
@@ -22,7 +21,7 @@ class UserProfileForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super(UserProfileForm, self).__init__(*args, **kwargs)
-        if user and user.role != 'admin':
+        if user is not None and user.role != 'admin':
             del self.fields['role']
         elif user is None:
             del self.fields['role']

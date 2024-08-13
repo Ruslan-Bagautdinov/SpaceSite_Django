@@ -1,11 +1,22 @@
-{#my_posts.html#}
 {% extends "base.html" %}
-{% block title %} My Posts {% endblock %}
+{% block title %}
+    {% if request.user.role == 'admin' %}
+        {{ username }} posts
+    {% else %}
+        My Posts
+    {% endif %}
+{% endblock %}
 {% block head %} {{ block.super }} {% endblock %}
 
 {% block page_content %}
     <div class="container">
-        <h2>My Posts</h2>
+        <h2>
+            {% if request.user.role == 'admin' %}
+                {{ username }} posts
+            {% else %}
+                My Posts
+            {% endif %}
+        </h2>
         <ul style="list-style-type: none; padding: 0;">
             {% for post in posts %}
                 <li style="margin-bottom: 10px;">

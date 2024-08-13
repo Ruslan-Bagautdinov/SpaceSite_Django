@@ -23,6 +23,24 @@
                     <div class="col-8 col-sm-9">
                         <div class="row mt-5">
                             <div class="col">
+                                <h3>Role:
+                                    {% if request.user.role == 'admin' %}
+                                        <select name="role">
+                                            <option value="user"
+                                                    {% if profile.user.role == 'user' %}selected{% endif %}>User
+                                            </option>
+                                            <option value="admin"
+                                                    {% if profile.user.role == 'admin' %}selected{% endif %}>Admin
+                                            </option>
+                                        </select>
+                                    {% else %}
+                                        {{ profile.user.role }}
+                                    {% endif %}
+                                </h3>
+                            </div>
+                        </div>
+                        <div class="row mt-5">
+                            <div class="col">
                                 <h3>Username: {{ profile.user.username }}</h3>
                             </div>
                         </div>
@@ -111,7 +129,9 @@
                         </div>
                         <div class="row">
                             <div class="col text-center">
-                                <a href="{% url 'delete_profile' profile.user_id %}" class="btn btn-danger btn-sm"
+                                <a href="
+                                        {% if request.user.role == 'admin' and request.user.id != profile.user_id %}{% url 'admin_delete_profile' profile.user_id %}{% else %}{% url 'delete_profile' profile.user_id %}{% endif %}"
+                                   class="btn btn-danger btn-sm"
                                    role="button" id="delete-button">Delete Account</a>
                             </div>
                         </div>

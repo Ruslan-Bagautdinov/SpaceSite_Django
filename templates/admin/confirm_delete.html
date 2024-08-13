@@ -11,15 +11,15 @@
                     <div class="container-fluid" style="margin: 5px">
                         <div class="row">
                             <div class="col text-center">
-                                <label for="delete-button" class="form-label">Warning: A deleted account cannot be
-                                    restored</label>
+                                <label for="delete-button" class="form-label">Are you sure you want to
+                                    delete {{ profile.user.role }} {{ profile.user.username }}?</label>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col text-center">
-                                <button type="submit" class="btn btn-danger btn-sm" id="delete-button">Delete Account
-                                </button>
-                                <a href="{% url 'admin_user_list' %}" class="btn btn-secondary btn-sm" role="button">Cancel</a>
+                                <button type="submit" class="btn btn-danger btn-sm" id="delete-button">Yes</button>
+                                <a href="{% url 'admin_user_list' %}" class="btn btn-secondary btn-sm"
+                                   role="button">No</a>
                             </div>
                         </div>
                     </div>
