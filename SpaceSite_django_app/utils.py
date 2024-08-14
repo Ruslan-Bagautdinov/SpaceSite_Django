@@ -1,3 +1,4 @@
+import os
 import random
 
 import requests
@@ -69,6 +70,7 @@ def load_unsplash_photo(query: str = "cosmos") -> str | None:
 
 def get_user_photo_url(profile):
     if profile.user_photo:
-        return profile.user_photo.url
-    else:
-        return '/static/img/default_avatar.jpg'
+        user_photo_path = profile.user_photo.path
+        if os.path.exists(user_photo_path):
+            return profile.user_photo.url
+    return '/static/img/default_avatar.jpg'

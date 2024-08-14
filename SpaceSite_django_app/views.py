@@ -196,8 +196,9 @@ class ProfileUpdateView(View):
             return redirect('profile', user_id=request.user.id)
         form = UserProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
-            profile = form.save(commit=False)
             if 'user_photo' in request.FILES:
+                if profile.user_photo:
+                    profile.user_photo.delete()
                 profile.user_photo = request.FILES['user_photo']
                 logger.info(f"Avatar updated for user {profile.user.username}")
             else:
@@ -344,8 +345,9 @@ class AdminUserProfileEditView(View):
         profile = get_object_or_404(UserProfile, user_id=user_id)
         form = UserProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
         if form.is_valid():
-            profile = form.save(commit=False)
             if 'user_photo' in request.FILES:
+                if profile.user_photo:
+                    profile.user_photo.delete()
                 profile.user_photo = request.FILES['user_photo']
                 logger.info(f"Avatar updated for user {profile.user.username}")
             else:
