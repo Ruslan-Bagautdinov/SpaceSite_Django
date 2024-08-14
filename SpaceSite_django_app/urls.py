@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (
     RootView, LoginView, LogoutView, RegisterView, ProfileView, ProfileUpdateView, DeleteProfileView,
     CreatePostView, PostListView, PostEditView, PostDeleteView, AdminUserListView, AdminUserProfileView,
-    AdminUserPostsView, AdminPostEditView, AdminDeleteProfileView
+    AdminUserPostsView, AdminPostEditView, AdminDeleteProfileView, AdminUserProfileEditView
 )
 
 urlpatterns = [
@@ -20,6 +20,7 @@ urlpatterns = [
     path('delete-post/<int:post_id>/', PostDeleteView.as_view(), name='delete_post'),
     path('for-admin/users/', AdminUserListView.as_view(), name='admin_user_list'),
     path('for-admin/user/<int:user_id>/profile/', AdminUserProfileView.as_view(), name='admin_user_profile'),
+    path('for-admin/user/<int:user_id>/profile/edit/', AdminUserProfileEditView.as_view(), name='admin_user_profile_edit'),
     path('for-admin/user/<int:user_id>/posts/', AdminUserPostsView.as_view(), name='admin_user_posts'),
     path('for-admin/edit-post/<int:post_id>/', AdminPostEditView.as_view(), name='admin_edit_post'),
     path('for-admin/user/<int:user_id>/delete/', AdminDeleteProfileView.as_view(), name='admin_delete_profile'),

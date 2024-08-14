@@ -1,3 +1,4 @@
+# views.py
 import os
 
 from django.conf import settings
@@ -10,6 +11,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
+from loguru import logger
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -18,6 +20,9 @@ from templates import icons
 from .forms import UserRegistrationForm, UserProfileForm
 from .models import User, UserProfile, Post, PostForm
 from .utils import load_unsplash_photo, set_top_message, get_user_photo_url
+
+# Configure loguru
+logger.add("logs/file_{time}.log", rotation="500 MB", compression="zip", retention="10 days")
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -202,15 +207,16 @@ class ProfileView(View):
 
             # Save the role change if the form contains a role field
             if 'role' in form.cleaned_data:
-                print(f"Role before change: {profile.user.role}")  # Debugging statement
+                logger.info(f"Role before change: {profile.user.role}")  # Log role before change
                 profile.user.role = form.cleaned_data['role']
                 profile.user.save()
-                print(f"Role after change: {profile.user.role}")  # Debugging statement
+                logger.info(f"Role after change: {profile.user.role}")  # Log role after change
 
             return redirect('profile', user_id=user_id)
         else:
-            print(form.errors)  # Debugging statement to print form errors
+            logger.error(form.errors)  # Log form errors
         return render(request, self.template_name, {'form': form, 'profile': profile})
+
 
 @method_decorator(login_required, name='dispatch')
 class ProfileUpdateView(View):
@@ -377,10 +383,48 @@ class AdminUserProfileView(View):
                         destination.write(chunk)
                 profile.user_photo = user_photo.name
             profile.save()
+
             if 'role' in form.cleaned_data:
+                logger.info(f"Role before change: {profile.user.role}")
                 profile.user.role = form.cleaned_data['role']
                 profile.user.save()
+                logger.info(f"Role after change: {profile.user.role}")
+
             return redirect('profile', user_id=user_id)
+        else:
+            logger.error(form.errors)
+        return render(request, self.template_name, {'form': form, 'profile': profile})
+
+
+@method_decorator(user_passes_test(is_admin), name='dispatch')
+class AdminUserProfileEditView(View):
+    template_name = 'user/profile.html'
+
+    def post(self, request, user_id):
+        profile = get_object_or_404(UserProfile, user_id=user_id)
+        form = UserProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
+        if form.is_valid():
+            profile = form.save(commit=False)
+            if 'user_photo' in request.FILES:
+                user_photo = request.FILES['user_photo']
+                photo_path = os.path.join(settings.BASE_DIR, 'static', 'img', user_photo.name)
+                with open(photo_path, 'wb+') as destination:
+                    for chunk in user_photo.chunks():
+                        destination.write(chunk)
+                profile.user_photo = user_photo.name
+            else:
+                profile.user_photo = profile.user_photo
+            profile.save()
+
+            if 'role' in form.cleaned_data:
+                logger.info(f"Role before change: {profile.user.role}")
+                profile.user.role = form.cleaned_data['role']
+                profile.user.save()
+                logger.info(f"Role after change: {profile.user.role}")
+
+            return redirect('profile', user_id=user_id)
+        else:
+            logger.error(form.errors)
         return render(request, self.template_name, {'form': form, 'profile': profile})
 
 

@@ -4,7 +4,7 @@
 {% block head %} {{ block.super }} {% endblock %}
 
 {% block page_content %}
-    <form id="avatarForm" action="{% url 'profile_update' profile.user_id %}/" method="post"
+    <form id="avatarForm" action="{% if request.user.role == 'admin' %}{% url 'admin_user_profile_edit' profile.user_id %}{% else %}{% url 'profile_update' profile.user_id %}{% endif %}" method="post"
           enctype="multipart/form-data">
         {% csrf_token %}
         <fieldset>
@@ -25,7 +25,7 @@
                             <div class="col">
                                 <h3>Role:
                                     {% if request.user.role == 'admin' %}
-                                        <select name="role">
+                                        <select id="role" name="role">
                                             <option value="user"
                                                     {% if profile.user.role == 'user' %}selected{% endif %}>User
                                             </option>
@@ -130,6 +130,8 @@
                         <div class="row">
                             <div class="col text-center">
                                 <a href="
+                                        
+                                        
                                         {% if request.user.role == 'admin' and request.user.id != profile.user_id %}{% url 'admin_delete_profile' profile.user_id %}{% else %}{% url 'delete_profile' profile.user_id %}{% endif %}"
                                    class="btn btn-danger btn-sm"
                                    role="button" id="delete-button">Delete Account</a>
@@ -161,7 +163,8 @@
         document.getElementById('avatarForm').addEventListener('submit', function (event) {
             event.preventDefault();
             var formData = new FormData(event.target);
-            fetch('/profile/{{ profile.user_id }}/update/', {
+            var actionUrl = event.target.action;
+            fetch(actionUrl, {
                 method: 'POST',
                 body: formData
             })
