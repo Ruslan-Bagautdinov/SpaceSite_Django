@@ -1,4 +1,3 @@
-import logging
 import os
 
 from django.conf import settings
@@ -11,7 +10,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
-from loguru import logger
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -21,33 +19,45 @@ from .forms import UserRegistrationForm, UserProfileForm
 from .models import User, UserProfile, Post, PostForm
 from .utils import load_unsplash_photo, set_top_message, get_user_photo_url
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 
 class MyTokenObtainPairView(TokenObtainPairView):
+    """
+    Custom view for obtaining JWT token pair.
+    """
     pass
 
 
 class MyTokenRefreshView(TokenRefreshView):
+    """
+    Custom view for refreshing JWT token.
+    """
     pass
 
 
 def is_admin(user):
+    """
+    Check if the user has the 'admin' role.
+
+    Args:
+        user (User): The user object to check.
+
+    Returns:
+        bool: True if the user is an admin, False otherwise.
+    """
     return user.role == 'admin'
 
 
 class RootView(View):
+    """
+    View for the root page, displaying posts and a welcome message.
+    """
+
     def get(self, request):
         template_name = 'root.html'
         top_message = request.session.get('top_message')
 
         if top_message is None:
-            if request.user.is_authenticated:
-                text = f"Hello, {request.user.username}!"
-            else:
-                text = "Welcome to our site!"
+            text = f"Hello, {request.user.username}!" if request.user.is_authenticated else "Welcome to our site!"
             top_message = {
                 "class": "alert alert-light rounded",
                 "icon": icons.HI_ICON,
@@ -55,14 +65,12 @@ class RootView(View):
             }
         else:
             del request.session['top_message']
-        unsplash_photo = load_unsplash_photo('universe galaxy cosmos')
-        if unsplash_photo is None:
-            unsplash_photo = '/static/img/default_unsplash.jpg'
+
+        unsplash_photo = load_unsplash_photo('universe galaxy cosmos') or '/static/img/default_unsplash.jpg'
         posts = Post.objects.all().order_by('-created_at')
 
-        # Pagination
         page = request.GET.get('page', 1)
-        paginator = Paginator(posts, 12)  # Show 12 posts per page
+        paginator = Paginator(posts, 12)
 
         try:
             posts = paginator.page(page)
@@ -81,6 +89,9 @@ class RootView(View):
 
 
 class LoginView(APIView):
+    """
+    View for user login.
+    """
     template_name = 'user/login.html'
 
     def get(self, request, *args, **kwargs):
@@ -117,6 +128,10 @@ class LoginView(APIView):
 
 
 class LogoutView(APIView):
+    """
+    View for user logout.
+    """
+
     def get(self, request):
         logout(request)
         set_top_message(request,
@@ -127,6 +142,9 @@ class LogoutView(APIView):
 
 
 class RegisterView(View):
+    """
+    View for user registration.
+    """
     template_name = 'user/register.html'
 
     def get(self, request, *args, **kwargs):
@@ -148,8 +166,8 @@ class RegisterView(View):
         profile_form = UserProfileForm(request.POST, request.FILES)
         if user_form.is_valid() and profile_form.is_valid():
             user = user_form.save(commit=False)
-            user.set_password(user.password)  # Hash the password
-            user.role = 'user'  # Assign the 'user' role
+            user.set_password(user.password)
+            user.role = 'user'
             user.save()
             profile = profile_form.save(commit=False)
             profile.user = user
@@ -169,6 +187,9 @@ class RegisterView(View):
 
 @method_decorator(login_required, name='dispatch')
 class ProfileView(View):
+    """
+    View for displaying user profile.
+    """
     template_name = 'user/profile.html'
 
     def get(self, request, user_id):
@@ -193,6 +214,9 @@ class ProfileView(View):
 
 @method_decorator(login_required, name='dispatch')
 class ProfileUpdateView(View):
+    """
+    View for updating user profile.
+    """
     template_name = 'user/profile.html'
 
     def post(self, request, user_id):
@@ -200,41 +224,23 @@ class ProfileUpdateView(View):
         if profile.user != request.user and not request.user.role == 'admin':
             return redirect('profile', user_id=request.user.id)
 
-        # Read the old avatar path from the database at the start
         old_avatar_path = None
         if profile.user_photo:
             old_avatar_path = os.path.normpath(
                 os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(profile.user_photo.name)))
-            logger.info(f"OLD AVATAR PATH FROM DATABASE: {old_avatar_path}")
 
         form = UserProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
-            # Save the form to update the profile with the new avatar
             profile = form.save(commit=False)
             if 'user_photo' in request.FILES:
-                new_avatar_path = os.path.normpath(
-                    os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(request.FILES['user_photo'].name)))
-                logger.info(f"NEW AVATAR PATH FROM FORM: {new_avatar_path}")
-                logger.info(f"New avatar uploaded for user {profile.user.username}")
                 profile.user_photo = request.FILES['user_photo']
             profile.save()
 
-            # Delete the old avatar after the new one is saved
             if old_avatar_path:
-                logger.info(f"Old avatar found for user {profile.user.username}, attempting to delete")
                 try:
                     os.remove(old_avatar_path)
-                    logger.info(f"Old avatar deleted for user {profile.user.username}")
                 except Exception as e:
-                    logger.error(f"Error deleting old avatar for user {profile.user.username}: {e}")
-                # Check if the old avatar file still exists
-                if os.path.exists(old_avatar_path):
-                    logger.warning(
-                        f"Old avatar file still exists for user {profile.user.username} at {old_avatar_path}")
-                    logger.info(f"{old_avatar_path}")
-                else:
-                    logger.info(f"Old avatar file successfully deleted for user {profile.user.username}")
-                    logger.info(f"{old_avatar_path}")
+                    pass
 
             set_top_message(request,
                             message_class=icons.OK_CLASS,
@@ -246,6 +252,9 @@ class ProfileUpdateView(View):
 
 @method_decorator(login_required, name='dispatch')
 class DeleteProfileView(View):
+    """
+    View for deleting user profile.
+    """
     template_name = 'user/confirm_delete.html'
 
     def get(self, request, user_id):
@@ -260,22 +269,12 @@ class DeleteProfileView(View):
             return redirect('profile', user_id=request.user.id)
         user = profile.user
         if profile.user_photo:
-            logger.info(f"Attempting to delete avatar for user {user.username}")
+            old_avatar_path = os.path.normpath(
+                os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(profile.user_photo.name)))
             try:
-                old_avatar_path = os.path.normpath(
-                    os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(profile.user_photo.name)))
-                logger.info(f"OLD AVATAR PATH FROM DATABASE: {old_avatar_path}")
                 os.remove(old_avatar_path)
-                logger.info(f"Avatar deleted for user {user.username}")
             except Exception as e:
-                logger.error(f"Error deleting avatar for user {user.username}: {e}")
-            # Check if the avatar file still exists
-            if os.path.exists(old_avatar_path):
-                logger.warning(f"Avatar file still exists for user {user.username} at {old_avatar_path}")
-                logger.info(f"{old_avatar_path}")
-            else:
-                logger.info(f"Avatar file successfully deleted for user {user.username}")
-                logger.info(f"{old_avatar_path}")
+                pass
         user.delete()
         set_top_message(request,
                         message_class=icons.WARNING_CLASS,
@@ -291,6 +290,9 @@ class DeleteProfileView(View):
 
 @method_decorator(login_required, name='dispatch')
 class CreatePostView(View):
+    """
+    View for creating a new post.
+    """
     template_name = 'user/create_post.html'
 
     def get(self, request):
@@ -312,6 +314,9 @@ class CreatePostView(View):
 
 
 class PostListView(View):
+    """
+    View for listing user's posts.
+    """
     template_name = 'user/my_posts.html'
 
     @method_decorator(login_required)
@@ -321,6 +326,9 @@ class PostListView(View):
 
 
 class PostEditView(View):
+    """
+    View for editing a post.
+    """
     template_name = 'user/edit_post.html'
 
     @method_decorator(login_required)
@@ -350,6 +358,10 @@ class PostEditView(View):
 
 
 class PostDeleteView(View):
+    """
+    View for deleting a post.
+    """
+
     @method_decorator(login_required)
     def post(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
@@ -366,6 +378,9 @@ class PostDeleteView(View):
 
 @method_decorator(user_passes_test(is_admin), name='dispatch')
 class AdminUserListView(View):
+    """
+    View for listing all users (admin only).
+    """
     template_name = 'admin/user_list.html'
 
     def get(self, request):
@@ -375,6 +390,9 @@ class AdminUserListView(View):
 
 @method_decorator(user_passes_test(is_admin), name='dispatch')
 class AdminUserProfileView(View):
+    """
+    View for displaying user profile (admin only).
+    """
     template_name = 'user/profile.html'
 
     def get(self, request, user_id):
@@ -386,61 +404,45 @@ class AdminUserProfileView(View):
 
 @method_decorator(user_passes_test(is_admin), name='dispatch')
 class AdminUserProfileEditView(View):
+    """
+    View for editing user profile (admin only).
+    """
     template_name = 'user/profile.html'
 
     def post(self, request, user_id):
         profile = get_object_or_404(UserProfile, user_id=user_id)
 
-        # Read the old avatar path from the database at the start
         old_avatar_path = None
         if profile.user_photo:
             old_avatar_path = os.path.normpath(
                 os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(profile.user_photo.name)))
-            logger.info(f"OLD AVATAR PATH FROM DATABASE: {old_avatar_path}")
 
         form = UserProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
         if form.is_valid():
-            # Save the form to update the profile with the new avatar
             profile = form.save(commit=False)
             if 'user_photo' in request.FILES:
-                new_avatar_path = os.path.normpath(
-                    os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(request.FILES['user_photo'].name)))
-                logger.info(f"NEW AVATAR PATH FROM FORM: {new_avatar_path}")
-                logger.info(f"New avatar uploaded for user {profile.user.username}")
                 profile.user_photo = request.FILES['user_photo']
             profile.save()
 
-            # Delete the old avatar after the new one is saved
             if old_avatar_path:
-                logger.info(f"Old avatar found for user {profile.user.username}, attempting to delete")
                 try:
                     os.remove(old_avatar_path)
-                    logger.info(f"Old avatar deleted for user {profile.user.username}")
                 except Exception as e:
-                    logger.error(f"Error deleting old avatar for user {profile.user.username}: {e}")
-                # Check if the old avatar file still exists
-                if os.path.exists(old_avatar_path):
-                    logger.warning(
-                        f"Old avatar file still exists for user {profile.user.username} at {old_avatar_path}")
-                    logger.info(f"{old_avatar_path}")
-                else:
-                    logger.info(f"Old avatar file successfully deleted for user {profile.user.username}")
-                    logger.info(f"{old_avatar_path}")
+                    pass
 
             if 'role' in form.cleaned_data:
-                logger.info(f"Role before change: {profile.user.role}")
                 profile.user.role = form.cleaned_data['role']
                 profile.user.save()
-                logger.info(f"Role after change: {profile.user.role}")
 
             return redirect('profile', user_id=user_id)
-        else:
-            logger.error(form.errors)
         return render(request, self.template_name, {'form': form, 'profile': profile})
 
 
 @method_decorator(user_passes_test(is_admin), name='dispatch')
 class AdminUserPostsView(View):
+    """
+    View for listing user's posts (admin only).
+    """
     template_name = 'user/my_posts.html'
 
     def get(self, request, user_id):
@@ -451,6 +453,9 @@ class AdminUserPostsView(View):
 
 @method_decorator(user_passes_test(is_admin), name='dispatch')
 class AdminPostEditView(View):
+    """
+    View for editing a post (admin only).
+    """
     template_name = 'user/edit_post.html'
 
     def get(self, request, post_id):
@@ -469,6 +474,9 @@ class AdminPostEditView(View):
 
 @method_decorator(user_passes_test(is_admin), name='dispatch')
 class AdminDeleteProfileView(View):
+    """
+    View for deleting a user profile (admin only).
+    """
     template_name = 'admin/confirm_delete.html'
 
     def get(self, request, user_id):
@@ -479,22 +487,12 @@ class AdminDeleteProfileView(View):
         profile = get_object_or_404(UserProfile, user_id=user_id)
         user = profile.user
         if profile.user_photo:
-            logger.info(f"Attempting to delete avatar for user {user.username}")
+            old_avatar_path = os.path.normpath(
+                os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(profile.user_photo.name)))
             try:
-                old_avatar_path = os.path.normpath(
-                    os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(profile.user_photo.name)))
-                logger.info(f"OLD AVATAR PATH FROM DATABASE: {old_avatar_path}")
                 os.remove(old_avatar_path)
-                logger.info(f"Avatar deleted for user {user.username}")
             except Exception as e:
-                logger.error(f"Error deleting avatar for user {user.username}: {e}")
-            # Check if the avatar file still exists
-            if os.path.exists(old_avatar_path):
-                logger.warning(f"Avatar file still exists for user {user.username} at {old_avatar_path}")
-                logger.info(f"{old_avatar_path}")
-            else:
-                logger.info(f"Avatar file successfully deleted for user {user.username}")
-                logger.info(f"{old_avatar_path}")
+                pass
         user.delete()
         set_top_message(request,
                         message_class=icons.WARNING_CLASS,
