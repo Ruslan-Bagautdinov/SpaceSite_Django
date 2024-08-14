@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.urls import path
 
 from .views import (
@@ -25,3 +27,6 @@ urlpatterns = [
     path('for-admin/edit-post/<int:post_id>/', AdminPostEditView.as_view(), name='admin_edit_post'),
     path('for-admin/user/<int:user_id>/delete/', AdminDeleteProfileView.as_view(), name='admin_delete_profile'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,7 +1,3 @@
-# views.py
-import os
-
-from django.conf import settings
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
@@ -189,34 +185,6 @@ class ProfileView(View):
         }
         return render(request, self.template_name, context)
 
-    def post(self, request, user_id):
-        profile = get_object_or_404(UserProfile, user_id=user_id)
-        if profile.user != request.user and request.user.role != 'admin':
-            return redirect('profile', user_id=request.user.id)
-        form = UserProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
-        if form.is_valid():
-            profile = form.save(commit=False)
-            if 'user_photo' in request.FILES:
-                user_photo = request.FILES['user_photo']
-                photo_path = os.path.join(settings.BASE_DIR, 'static', 'img', user_photo.name)
-                with open(photo_path, 'wb+') as destination:
-                    for chunk in user_photo.chunks():
-                        destination.write(chunk)
-                profile.user_photo = user_photo.name
-            profile.save()
-
-            # Save the role change if the form contains a role field
-            if 'role' in form.cleaned_data:
-                logger.info(f"Role before change: {profile.user.role}")  # Log role before change
-                profile.user.role = form.cleaned_data['role']
-                profile.user.save()
-                logger.info(f"Role after change: {profile.user.role}")  # Log role after change
-
-            return redirect('profile', user_id=user_id)
-        else:
-            logger.error(form.errors)  # Log form errors
-        return render(request, self.template_name, {'form': form, 'profile': profile})
-
 
 @method_decorator(login_required, name='dispatch')
 class ProfileUpdateView(View):
@@ -230,12 +198,10 @@ class ProfileUpdateView(View):
         if form.is_valid():
             profile = form.save(commit=False)
             if 'user_photo' in request.FILES:
-                user_photo = request.FILES['user_photo']
-                photo_path = os.path.join(settings.BASE_DIR, 'static', 'img', user_photo.name)
-                with open(photo_path, 'wb+') as destination:
-                    for chunk in user_photo.chunks():
-                        destination.write(chunk)
-                profile.user_photo = user_photo.name
+                profile.user_photo = request.FILES['user_photo']
+                logger.info(f"Avatar updated for user {profile.user.username}")
+            else:
+                logger.info(f"Avatar not changed for user {profile.user.username}")
             profile.save()
             set_top_message(request,
                             message_class=icons.OK_CLASS,
@@ -260,9 +226,8 @@ class DeleteProfileView(View):
         if profile.user != request.user and not request.user.role == 'admin':
             return redirect('profile', user_id=request.user.id)
         user = profile.user
-        user_photo_path = profile.user_photo
-        if user_photo_path and os.path.exists(os.path.join(settings.BASE_DIR, 'static', 'img', user_photo_path)):
-            os.remove(os.path.join(settings.BASE_DIR, 'static', 'img', user_photo_path))
+        if profile.user_photo:
+            profile.user_photo.delete()
         user.delete()
         set_top_message(request,
                         message_class=icons.WARNING_CLASS,
@@ -370,31 +335,6 @@ class AdminUserProfileView(View):
         user_photo_url = get_user_photo_url(profile)
         return render(request, self.template_name, {'form': form, 'profile': profile, 'user_photo_url': user_photo_url})
 
-    def post(self, request, user_id):
-        profile = get_object_or_404(UserProfile, user_id=user_id)
-        form = UserProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
-        if form.is_valid():
-            profile = form.save(commit=False)
-            if 'user_photo' in request.FILES:
-                user_photo = request.FILES['user_photo']
-                photo_path = os.path.join(settings.BASE_DIR, 'static', 'img', user_photo.name)
-                with open(photo_path, 'wb+') as destination:
-                    for chunk in user_photo.chunks():
-                        destination.write(chunk)
-                profile.user_photo = user_photo.name
-            profile.save()
-
-            if 'role' in form.cleaned_data:
-                logger.info(f"Role before change: {profile.user.role}")
-                profile.user.role = form.cleaned_data['role']
-                profile.user.save()
-                logger.info(f"Role after change: {profile.user.role}")
-
-            return redirect('profile', user_id=user_id)
-        else:
-            logger.error(form.errors)
-        return render(request, self.template_name, {'form': form, 'profile': profile})
-
 
 @method_decorator(user_passes_test(is_admin), name='dispatch')
 class AdminUserProfileEditView(View):
@@ -406,14 +346,10 @@ class AdminUserProfileEditView(View):
         if form.is_valid():
             profile = form.save(commit=False)
             if 'user_photo' in request.FILES:
-                user_photo = request.FILES['user_photo']
-                photo_path = os.path.join(settings.BASE_DIR, 'static', 'img', user_photo.name)
-                with open(photo_path, 'wb+') as destination:
-                    for chunk in user_photo.chunks():
-                        destination.write(chunk)
-                profile.user_photo = user_photo.name
+                profile.user_photo = request.FILES['user_photo']
+                logger.info(f"Avatar updated for user {profile.user.username}")
             else:
-                profile.user_photo = profile.user_photo
+                logger.info(f"Avatar not changed for user {profile.user.username}")
             profile.save()
 
             if 'role' in form.cleaned_data:
@@ -467,9 +403,8 @@ class AdminDeleteProfileView(View):
     def post(self, request, user_id):
         profile = get_object_or_404(UserProfile, user_id=user_id)
         user = profile.user
-        user_photo_path = profile.user_photo
-        if user_photo_path and os.path.exists(os.path.join(settings.BASE_DIR, 'static', 'img', user_photo_path)):
-            os.remove(os.path.join(settings.BASE_DIR, 'static', 'img', user_photo_path))
+        if profile.user_photo:
+            profile.user_photo.delete()
         user.delete()
         set_top_message(request,
                         message_class=icons.WARNING_CLASS,

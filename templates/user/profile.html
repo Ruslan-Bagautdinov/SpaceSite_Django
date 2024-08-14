@@ -130,8 +130,8 @@
                         <div class="row">
                             <div class="col text-center">
                                 <a href="
-                                        
-                                        
+
+
                                         {% if request.user.role == 'admin' and request.user.id != profile.user_id %}{% url 'admin_delete_profile' profile.user_id %}{% else %}{% url 'delete_profile' profile.user_id %}{% endif %}"
                                    class="btn btn-danger btn-sm"
                                    role="button" id="delete-button">Delete Account</a>

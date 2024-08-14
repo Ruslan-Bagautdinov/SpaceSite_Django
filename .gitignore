@@ -3,5 +3,6 @@
 .git/
 .stuff/
 **/__pycache__/
-photo/*
+media/avatars/*
+logs/*
 .env
