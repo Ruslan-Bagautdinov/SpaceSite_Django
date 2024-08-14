@@ -1,6 +1,7 @@
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
+from django.core.files.storage import default_storage
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
@@ -198,11 +199,8 @@ class ProfileUpdateView(View):
         if form.is_valid():
             if 'user_photo' in request.FILES:
                 if profile.user_photo:
-                    profile.user_photo.delete()
+                    default_storage.delete(profile.user_photo.path)
                 profile.user_photo = request.FILES['user_photo']
-                logger.info(f"Avatar updated for user {profile.user.username}")
-            else:
-                logger.info(f"Avatar not changed for user {profile.user.username}")
             profile.save()
             set_top_message(request,
                             message_class=icons.OK_CLASS,
@@ -228,7 +226,7 @@ class DeleteProfileView(View):
             return redirect('profile', user_id=request.user.id)
         user = profile.user
         if profile.user_photo:
-            profile.user_photo.delete()
+            default_storage.delete(profile.user_photo.path)
         user.delete()
         set_top_message(request,
                         message_class=icons.WARNING_CLASS,
@@ -347,11 +345,8 @@ class AdminUserProfileEditView(View):
         if form.is_valid():
             if 'user_photo' in request.FILES:
                 if profile.user_photo:
-                    profile.user_photo.delete()
+                    default_storage.delete(profile.user_photo.path)
                 profile.user_photo = request.FILES['user_photo']
-                logger.info(f"Avatar updated for user {profile.user.username}")
-            else:
-                logger.info(f"Avatar not changed for user {profile.user.username}")
             profile.save()
 
             if 'role' in form.cleaned_data:
@@ -406,7 +401,7 @@ class AdminDeleteProfileView(View):
         profile = get_object_or_404(UserProfile, user_id=user_id)
         user = profile.user
         if profile.user_photo:
-            profile.user_photo.delete()
+            default_storage.delete(profile.user_photo.path)
         user.delete()
         set_top_message(request,
                         message_class=icons.WARNING_CLASS,
