@@ -1,10 +1,11 @@
-{#profile.html#}
 {% extends "base.html" %}
 {% block title %} Profile page {% endblock %}
 {% block head %} {{ block.super }} {% endblock %}
 
 {% block page_content %}
-    <form id="avatarForm" action="{% if request.user.role == 'admin' %}{% url 'admin_user_profile_edit' profile.user_id %}{% else %}{% url 'profile_update' profile.user_id %}{% endif %}" method="post"
+    <form id="avatarForm" action="
+            {% if request.user.role == 'admin' %}{% url 'admin_user_profile_edit' profile.user_id %}{% else %}{% url 'profile_update' profile.user_id %}{% endif %}"
+          method="post"
           enctype="multipart/form-data">
         {% csrf_token %}
         <fieldset>
@@ -132,6 +133,7 @@
                                 <a href="
 
 
+                                        
                                         {% if request.user.role == 'admin' and request.user.id != profile.user_id %}{% url 'admin_delete_profile' profile.user_id %}{% else %}{% url 'delete_profile' profile.user_id %}{% endif %}"
                                    class="btn btn-danger btn-sm"
                                    role="button" id="delete-button">Delete Account</a>
@@ -160,27 +162,6 @@
 
         document.getElementById('user_photo').addEventListener('change', previewAvatar);
 
-        document.getElementById('avatarForm').addEventListener('submit', function (event) {
-            event.preventDefault();
-            var formData = new FormData(event.target);
-            var actionUrl = event.target.action;
-            fetch(actionUrl, {
-                method: 'POST',
-                body: formData
-            })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Success:', data);
-                    var output = document.getElementById('avatar');
-                    output.src = URL.createObjectURL(event.target.user_photo.files[0]);
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                });
-        });
-    </script>
-
-    <script>
         function validateAge(event) {
             var age = document.getElementById('user_age').value;
             if (age < 16 || age > 120) {
@@ -188,5 +169,7 @@
                 event.preventDefault();
             }
         }
+
+        document.getElementById('avatarForm').addEventListener('submit', validateAge);
     </script>
 {% endblock %}

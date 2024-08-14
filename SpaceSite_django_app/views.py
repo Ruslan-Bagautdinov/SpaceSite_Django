@@ -1,7 +1,10 @@
+import logging
+import os
+
+from django.conf import settings
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
-from django.core.files.storage import default_storage
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
@@ -18,8 +21,9 @@ from .forms import UserRegistrationForm, UserProfileForm
 from .models import User, UserProfile, Post, PostForm
 from .utils import load_unsplash_photo, set_top_message, get_user_photo_url
 
-# Configure loguru
-logger.add("logs/file_{time}.log", rotation="500 MB", compression="zip", retention="10 days")
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -197,11 +201,39 @@ class ProfileUpdateView(View):
             return redirect('profile', user_id=request.user.id)
         form = UserProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
+            old_avatar_path = None
+            if profile.user_photo:
+                old_avatar_path = os.path.normpath(
+                    os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(profile.user_photo.name)))
+                logger.info(f"OLD AVATAR PATH FROM DATABASE: {old_avatar_path}")
+
+            # Save the form to update the profile with the new avatar
+            profile = form.save(commit=False)
             if 'user_photo' in request.FILES:
-                if profile.user_photo:
-                    default_storage.delete(profile.user_photo.path)
+                new_avatar_path = os.path.normpath(
+                    os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(request.FILES['user_photo'].name)))
+                logger.info(f"NEW AVATAR PATH FROM FORM: {new_avatar_path}")
+                logger.info(f"New avatar uploaded for user {profile.user.username}")
                 profile.user_photo = request.FILES['user_photo']
             profile.save()
+
+            # Delete the old avatar after the new one is saved
+            if old_avatar_path:
+                logger.info(f"Old avatar found for user {profile.user.username}, attempting to delete")
+                try:
+                    os.remove(old_avatar_path)
+                    logger.info(f"Old avatar deleted for user {profile.user.username}")
+                except Exception as e:
+                    logger.error(f"Error deleting old avatar for user {profile.user.username}: {e}")
+                # Check if the old avatar file still exists
+                if os.path.exists(old_avatar_path):
+                    logger.warning(
+                        f"Old avatar file still exists for user {profile.user.username} at {old_avatar_path}")
+                    logger.info(f"{old_avatar_path}")
+                else:
+                    logger.info(f"Old avatar file successfully deleted for user {profile.user.username}")
+                    logger.info(f"{old_avatar_path}")
+
             set_top_message(request,
                             message_class=icons.OK_CLASS,
                             message_icon=icons.OK_ICON,
@@ -226,7 +258,22 @@ class DeleteProfileView(View):
             return redirect('profile', user_id=request.user.id)
         user = profile.user
         if profile.user_photo:
-            default_storage.delete(profile.user_photo.path)
+            logger.info(f"Attempting to delete avatar for user {user.username}")
+            try:
+                old_avatar_path = os.path.normpath(
+                    os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(profile.user_photo.name)))
+                logger.info(f"OLD AVATAR PATH FROM DATABASE: {old_avatar_path}")
+                os.remove(old_avatar_path)
+                logger.info(f"Avatar deleted for user {user.username}")
+            except Exception as e:
+                logger.error(f"Error deleting avatar for user {user.username}: {e}")
+            # Check if the avatar file still exists
+            if os.path.exists(old_avatar_path):
+                logger.warning(f"Avatar file still exists for user {user.username} at {old_avatar_path}")
+                logger.info(f"{old_avatar_path}")
+            else:
+                logger.info(f"Avatar file successfully deleted for user {user.username}")
+                logger.info(f"{old_avatar_path}")
         user.delete()
         set_top_message(request,
                         message_class=icons.WARNING_CLASS,
@@ -343,11 +390,38 @@ class AdminUserProfileEditView(View):
         profile = get_object_or_404(UserProfile, user_id=user_id)
         form = UserProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
         if form.is_valid():
+            old_avatar_path = None
+            if profile.user_photo:
+                old_avatar_path = os.path.normpath(
+                    os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(profile.user_photo.name)))
+                logger.info(f"OLD AVATAR PATH FROM DATABASE: {old_avatar_path}")
+
+            # Save the form to update the profile with the new avatar
+            profile = form.save(commit=False)
             if 'user_photo' in request.FILES:
-                if profile.user_photo:
-                    default_storage.delete(profile.user_photo.path)
+                new_avatar_path = os.path.normpath(
+                    os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(request.FILES['user_photo'].name)))
+                logger.info(f"NEW AVATAR PATH FROM FORM: {new_avatar_path}")
+                logger.info(f"New avatar uploaded for user {profile.user.username}")
                 profile.user_photo = request.FILES['user_photo']
             profile.save()
+
+            # Delete the old avatar after the new one is saved
+            if old_avatar_path:
+                logger.info(f"Old avatar found for user {profile.user.username}, attempting to delete")
+                try:
+                    os.remove(old_avatar_path)
+                    logger.info(f"Old avatar deleted for user {profile.user.username}")
+                except Exception as e:
+                    logger.error(f"Error deleting old avatar for user {profile.user.username}: {e}")
+                # Check if the old avatar file still exists
+                if os.path.exists(old_avatar_path):
+                    logger.warning(
+                        f"Old avatar file still exists for user {profile.user.username} at {old_avatar_path}")
+                    logger.info(f"{old_avatar_path}")
+                else:
+                    logger.info(f"Old avatar file successfully deleted for user {profile.user.username}")
+                    logger.info(f"{old_avatar_path}")
 
             if 'role' in form.cleaned_data:
                 logger.info(f"Role before change: {profile.user.role}")
@@ -401,7 +475,22 @@ class AdminDeleteProfileView(View):
         profile = get_object_or_404(UserProfile, user_id=user_id)
         user = profile.user
         if profile.user_photo:
-            default_storage.delete(profile.user_photo.path)
+            logger.info(f"Attempting to delete avatar for user {user.username}")
+            try:
+                old_avatar_path = os.path.normpath(
+                    os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(profile.user_photo.name)))
+                logger.info(f"OLD AVATAR PATH FROM DATABASE: {old_avatar_path}")
+                os.remove(old_avatar_path)
+                logger.info(f"Avatar deleted for user {user.username}")
+            except Exception as e:
+                logger.error(f"Error deleting avatar for user {user.username}: {e}")
+            # Check if the avatar file still exists
+            if os.path.exists(old_avatar_path):
+                logger.warning(f"Avatar file still exists for user {user.username} at {old_avatar_path}")
+                logger.info(f"{old_avatar_path}")
+            else:
+                logger.info(f"Avatar file successfully deleted for user {user.username}")
+                logger.info(f"{old_avatar_path}")
         user.delete()
         set_top_message(request,
                         message_class=icons.WARNING_CLASS,
