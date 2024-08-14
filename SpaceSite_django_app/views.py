@@ -199,14 +199,16 @@ class ProfileUpdateView(View):
         profile = get_object_or_404(UserProfile, user_id=user_id)
         if profile.user != request.user and not request.user.role == 'admin':
             return redirect('profile', user_id=request.user.id)
+
+        # Read the old avatar path from the database at the start
+        old_avatar_path = None
+        if profile.user_photo:
+            old_avatar_path = os.path.normpath(
+                os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(profile.user_photo.name)))
+            logger.info(f"OLD AVATAR PATH FROM DATABASE: {old_avatar_path}")
+
         form = UserProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
-            old_avatar_path = None
-            if profile.user_photo:
-                old_avatar_path = os.path.normpath(
-                    os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(profile.user_photo.name)))
-                logger.info(f"OLD AVATAR PATH FROM DATABASE: {old_avatar_path}")
-
             # Save the form to update the profile with the new avatar
             profile = form.save(commit=False)
             if 'user_photo' in request.FILES:
@@ -388,14 +390,16 @@ class AdminUserProfileEditView(View):
 
     def post(self, request, user_id):
         profile = get_object_or_404(UserProfile, user_id=user_id)
+
+        # Read the old avatar path from the database at the start
+        old_avatar_path = None
+        if profile.user_photo:
+            old_avatar_path = os.path.normpath(
+                os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(profile.user_photo.name)))
+            logger.info(f"OLD AVATAR PATH FROM DATABASE: {old_avatar_path}")
+
         form = UserProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
         if form.is_valid():
-            old_avatar_path = None
-            if profile.user_photo:
-                old_avatar_path = os.path.normpath(
-                    os.path.join(settings.MEDIA_ROOT, 'avatars', os.path.basename(profile.user_photo.name)))
-                logger.info(f"OLD AVATAR PATH FROM DATABASE: {old_avatar_path}")
-
             # Save the form to update the profile with the new avatar
             profile = form.save(commit=False)
             if 'user_photo' in request.FILES:

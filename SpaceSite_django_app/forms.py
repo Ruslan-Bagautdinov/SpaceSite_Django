@@ -1,5 +1,5 @@
-# forms.py
 from django import forms
+from django.core.exceptions import ValidationError
 
 from .models import User, UserProfile
 
@@ -26,3 +26,9 @@ class UserProfileForm(forms.ModelForm):
             del self.fields['role']
         elif user is None:
             del self.fields['role']
+
+    def clean_user_age(self):
+        age = self.cleaned_data.get('user_age')
+        if age is not None and (age < 16 or age > 120):
+            raise ValidationError("Age must be between 16 and 120.")
+        return age

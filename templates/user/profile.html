@@ -9,7 +9,6 @@
           enctype="multipart/form-data">
         {% csrf_token %}
         <fieldset>
-            <legend>Your profile</legend>
 
             <div class="border border-secondary rounded">
                 <div class="row text-start">
@@ -131,8 +130,6 @@
                         <div class="row">
                             <div class="col text-center">
                                 <a href="
-
-
                                         
                                         {% if request.user.role == 'admin' and request.user.id != profile.user_id %}{% url 'admin_delete_profile' profile.user_id %}{% else %}{% url 'delete_profile' profile.user_id %}{% endif %}"
                                    class="btn btn-danger btn-sm"
@@ -161,15 +158,5 @@
         }
 
         document.getElementById('user_photo').addEventListener('change', previewAvatar);
-
-        function validateAge(event) {
-            var age = document.getElementById('user_age').value;
-            if (age < 16 || age > 120) {
-                alert('Please enter a valid age between 16 and 120.');
-                event.preventDefault();
-            }
-        }
-
-        document.getElementById('avatarForm').addEventListener('submit', validateAge);
     </script>
 {% endblock %}
