@@ -44,7 +44,7 @@ def is_admin(user):
     Returns:
         bool: True if the user is an admin, False otherwise.
     """
-    return user.role == 'admin'
+    return user.is_authenticated and user.role == 'admin'
 
 
 class RootView(View):
@@ -282,8 +282,6 @@ class DeleteProfileView(View):
                         message_class=icons.WARNING_CLASS,
                         message_icon=icons.USER_DELETE_ICON,
                         message_text=f"{user.username} has been deleted!")
-        if request.user.role == 'admin':
-            return redirect('admin_user_list')
         logout(request)
         response = redirect('login')
         response.delete_cookie('access_token')
@@ -387,6 +385,10 @@ class AdminUserListView(LoginRequiredMixin, View):
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
+            set_top_message(request,
+                            message_class=icons.WARNING_CLASS,
+                            message_icon=icons.WARNING_ICON,
+                            message_text="You don't have permissions to view this page")
             return redirect('root')
         return super().dispatch(request, *args, **kwargs)
 
@@ -404,6 +406,10 @@ class AdminUserProfileView(LoginRequiredMixin, View):
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
+            set_top_message(request,
+                            message_class=icons.WARNING_CLASS,
+                            message_icon=icons.WARNING_ICON,
+                            message_text="You don't have permissions to view this page")
             return redirect('root')
         return super().dispatch(request, *args, **kwargs)
 
@@ -428,6 +434,10 @@ class AdminUserProfileEditView(LoginRequiredMixin, View):
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
+            set_top_message(request,
+                            message_class=icons.WARNING_CLASS,
+                            message_icon=icons.WARNING_ICON,
+                            message_text="You don't have permissions to view this page")
             return redirect('root')
         return super().dispatch(request, *args, **kwargs)
 
@@ -469,6 +479,10 @@ class AdminUserPostsView(LoginRequiredMixin, View):
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
+            set_top_message(request,
+                            message_class=icons.WARNING_CLASS,
+                            message_icon=icons.WARNING_ICON,
+                            message_text="You don't have permissions to view this page")
             return redirect('root')
         return super().dispatch(request, *args, **kwargs)
 
@@ -487,6 +501,10 @@ class AdminPostEditView(LoginRequiredMixin, View):
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
+            set_top_message(request,
+                            message_class=icons.WARNING_CLASS,
+                            message_icon=icons.WARNING_ICON,
+                            message_text="You don't have permissions to view this page")
             return redirect('root')
         return super().dispatch(request, *args, **kwargs)
 
@@ -513,6 +531,10 @@ class AdminDeleteProfileView(LoginRequiredMixin, View):
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
+            set_top_message(request,
+                            message_class=icons.WARNING_CLASS,
+                            message_icon=icons.WARNING_ICON,
+                            message_text="You don't have permissions to view this page")
             return redirect('root')
         return super().dispatch(request, *args, **kwargs)
 
