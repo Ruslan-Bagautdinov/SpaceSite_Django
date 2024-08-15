@@ -2,8 +2,8 @@ import os
 
 from django.conf import settings
 from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
@@ -187,13 +187,15 @@ class RegisterView(View):
 
 @method_decorator(login_required, name='dispatch')
 class ProfileView(View):
-    """
-    View for displaying user profile.
-    """
     template_name = 'user/profile.html'
 
+    def get_object(self, user_id):
+        user = get_object_or_404(User, id=user_id)
+        profile, created = UserProfile.objects.get_or_create(user=user)
+        return profile
+
     def get(self, request, user_id):
-        profile = get_object_or_404(UserProfile, user_id=user_id)
+        profile = self.get_object(user_id)
         if profile.user != request.user and request.user.role != 'admin':
             return redirect('profile', user_id=request.user.id)
         form = UserProfileForm(instance=profile, user=request.user)
@@ -377,11 +379,16 @@ class PostDeleteView(View):
 
 
 @method_decorator(user_passes_test(is_admin), name='dispatch')
-class AdminUserListView(View):
+class AdminUserListView(LoginRequiredMixin, View):
     """
     View for listing all users (admin only).
     """
     template_name = 'admin/user_list.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('root')
+        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request):
         users = User.objects.all()
@@ -389,25 +396,40 @@ class AdminUserListView(View):
 
 
 @method_decorator(user_passes_test(is_admin), name='dispatch')
-class AdminUserProfileView(View):
+class AdminUserProfileView(LoginRequiredMixin, View):
     """
     View for displaying user profile (admin only).
     """
     template_name = 'user/profile.html'
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('root')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self, user_id):
+        user = get_object_or_404(User, id=user_id)
+        profile, created = UserProfile.objects.get_or_create(user=user)
+        return profile
+
     def get(self, request, user_id):
-        profile = get_object_or_404(UserProfile, user_id=user_id)
+        profile = self.get_object(user_id)
         form = UserProfileForm(instance=profile, user=request.user)
         user_photo_url = get_user_photo_url(profile)
         return render(request, self.template_name, {'form': form, 'profile': profile, 'user_photo_url': user_photo_url})
 
 
 @method_decorator(user_passes_test(is_admin), name='dispatch')
-class AdminUserProfileEditView(View):
+class AdminUserProfileEditView(LoginRequiredMixin, View):
     """
     View for editing user profile (admin only).
     """
     template_name = 'user/profile.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('root')
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, user_id):
         profile = get_object_or_404(UserProfile, user_id=user_id)
@@ -439,11 +461,16 @@ class AdminUserProfileEditView(View):
 
 
 @method_decorator(user_passes_test(is_admin), name='dispatch')
-class AdminUserPostsView(View):
+class AdminUserPostsView(LoginRequiredMixin, View):
     """
     View for listing user's posts (admin only).
     """
     template_name = 'user/my_posts.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('root')
+        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, user_id):
         posts = Post.objects.filter(user_id=user_id).order_by('-created_at')
@@ -452,11 +479,16 @@ class AdminUserPostsView(View):
 
 
 @method_decorator(user_passes_test(is_admin), name='dispatch')
-class AdminPostEditView(View):
+class AdminPostEditView(LoginRequiredMixin, View):
     """
     View for editing a post (admin only).
     """
     template_name = 'user/edit_post.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('root')
+        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
@@ -473,11 +505,16 @@ class AdminPostEditView(View):
 
 
 @method_decorator(user_passes_test(is_admin), name='dispatch')
-class AdminDeleteProfileView(View):
+class AdminDeleteProfileView(LoginRequiredMixin, View):
     """
     View for deleting a user profile (admin only).
     """
     template_name = 'admin/confirm_delete.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('root')
+        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, user_id):
         profile = get_object_or_404(UserProfile, user_id=user_id)
